@@ -59,8 +59,15 @@ class ParapheurController extends Controller
             'existing_document_ids' => 'nullable|array',
             'existing_document_ids.*' => 'exists:documents,id',
             'new_documents' => 'nullable|array',
-            'new_documents.*' => 'file|mimes:pdf,doc,docx|max:2048'
+            'new_documents.*' => 'file|mimes:pdf,doc,docx|max:2048',
+            'signataires' => 'nullable|array',
+            'signataires.*' => 'exists:signataires,id'
         ]);
+
+        // Vérifier qu'au moins un document est fourni
+        if (!$request->has('existing_document_ids') && !$request->hasFile('new_documents')) {
+            return redirect()->back()->with('error', 'Veuillez sélectionner au moins un document existant ou télécharger un nouveau document.');
+        }
 
         // Vérifier le nombre maximum de documents (15)
         $currentCount = $parapheur->documents()->count();
@@ -80,8 +87,9 @@ class ParapheurController extends Controller
             \Log::info('Adding existing documents', ['documents' => $request->existing_document_ids]);
             foreach ($request->existing_document_ids as $documentId) {
                 if (!$parapheur->documents->contains($documentId)) {
+                    $document = Document::find($documentId);
                     $parapheur->documents()->attach($documentId, [
-                        'status' => 'en_attente',
+                        'status' => $document->status === 'en attente' ? 'en_attente' : 'brouillon',
                         'updated_at' => now()
                     ]);
                     \Log::info('Attached document', ['document_id' => $documentId]);
@@ -96,14 +104,23 @@ class ParapheurController extends Controller
                 $filename = time() . '_' . $file->getClientOriginalName();
                 $file->storeAs('documents', $filename, 'public');
 
+                // Déterminer le statut en fonction de la présence de signataires
+                $status = $request->filled('signataires') ? 'en attente' : 'brouillon';
+
                 $document = Document::create([
                     'titre' => $file->getClientOriginalName(),
-                    'fichier' => $filename,
-                    'user_id' => auth()->id()
+                    'fichier' => 'documents/' . $filename,
+                    'user_id' => auth()->id(),
+                    'status' => $status
                 ]);
 
+                // Attacher les signataires si présents
+                if ($request->filled('signataires')) {
+                    $document->signataires()->attach($request->signataires);
+                }
+
                 $parapheur->documents()->attach($document->id, [
-                    'status' => 'en_attente',
+                    'status' => $status === 'en attente' ? 'en_attente' : 'brouillon',
                     'updated_at' => now()
                 ]);
                 \Log::info('Created and attached new document', ['filename' => $filename]);
@@ -113,9 +130,9 @@ class ParapheurController extends Controller
         return redirect()->back()->with('success', 'Document(s) ajouté(s) avec succès');
     }
 
-    public function removeDocument(Parapheur $p, Document $d)
+    public function removeDocument(Parapheur $parapheur, Document $document)
     {
-        $p->documents()->detach($d->id);
+        $parapheur->documents()->detach($document->id);
         return back();
     }
 

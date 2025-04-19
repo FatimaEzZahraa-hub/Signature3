@@ -143,6 +143,8 @@
         <p><strong>Statut global :</strong>
           @if($parapheur->status=='en_attente')
             En attente
+          @elseif($parapheur->status=='brouillon')
+            Brouillon
           @else
             Signé
           @endif
@@ -169,8 +171,8 @@
             <tr>
               <td>{{ $doc->titre }}</td>
               <td>
-                <span class="badge {{ $doc->pivot->status === 'signé' ? 'bg-success' : 'bg-warning' }}">
-                  {{ $doc->pivot->status === 'signé' ? 'Signé' : 'En attente' }}
+                <span class="badge {{ $doc->pivot->status === 'signé' ? 'bg-success' : ($doc->pivot->status === 'brouillon' ? 'bg-secondary' : 'bg-warning') }}">
+                  {{ $doc->pivot->status === 'signé' ? 'Signé' : ($doc->pivot->status === 'brouillon' ? 'Brouillon' : 'En attente') }}
                 </span>
               </td>
               <td>{{ $doc->pivot->updated_at->format('d/m/Y') }}</td>

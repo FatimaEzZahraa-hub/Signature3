@@ -10,7 +10,7 @@
         <div class="modal-body">
           <div class="mb-3">
             <label for="existing_document_ids" class="form-label">Sélectionner des documents existants</label>
-            <select name="existing_document_ids[]" id="existing_document_ids" class="form-select" multiple size="5" required>
+            <select name="existing_document_ids[]" id="existing_document_ids" class="form-select" multiple size="5">
               @foreach(\App\Models\Document::all() as $doc)
                 <option value="{{ $doc->id }}">{{ $doc->titre }}</option>
               @endforeach
@@ -27,6 +27,16 @@
             </div>
             <small class="text-muted">Vous pouvez sélectionner plusieurs fichiers</small>
           </div>
+
+          <div class="mb-3">
+            <label for="signataires" class="form-label">Signataires (optionnel)</label>
+            <select name="signataires[]" id="signataires" class="form-select" multiple>
+              @foreach(\App\Models\Signataire::all() as $signataire)
+                <option value="{{ $signataire->id }}">{{ $signataire->name }} ({{ $signataire->email }})</option>
+              @endforeach
+            </select>
+            <small class="text-muted">Maintenez Ctrl (ou Cmd sur Mac) pour sélectionner plusieurs signataires</small>
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
@@ -39,18 +49,13 @@
 
 <script>
 document.getElementById('addDocumentForm').addEventListener('submit', function(e) {
-    const existingDocs = document.getElementById('existing_document_ids');
-    const newDocs = document.getElementById('new_documents');
+    const existingDocs = document.getElementById('existing_document_ids').selectedOptions.length;
+    const newDocs = document.getElementById('new_documents').files.length;
     
-    if (existingDocs.selectedOptions.length === 0 && newDocs.files.length === 0) {
+    if (existingDocs === 0 && newDocs === 0) {
         e.preventDefault();
-        alert('Veuillez sélectionner au moins un document ou télécharger un nouveau fichier.');
-        return false;
+        alert('Veuillez sélectionner au moins un document existant ou télécharger un nouveau document.');
     }
-    
-    // Afficher les données sélectionnées dans la console
-    console.log('Documents existants sélectionnés:', Array.from(existingDocs.selectedOptions).map(opt => opt.value));
-    console.log('Nouveaux fichiers:', Array.from(newDocs.files).map(file => file.name));
 });
 </script>
 

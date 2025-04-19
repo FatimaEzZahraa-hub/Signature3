@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('document_parapheur', function (Blueprint $table) {
-            $table->enum('status', ['en_attente', 'signé'])->default('en_attente')->after('document_id');
+            $table->enum('status', ['en_attente', 'signé', 'brouillon'])->default('en_attente')->after('document_id');
         });
     }
 

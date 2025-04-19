@@ -74,12 +74,15 @@ class DocumentController extends Controller
 
         $path = $request->file('file')->store('documents', 'public');
 
+        // Déterminer le statut en fonction de la présence de signataires
+        $status = $request->filled('signataires') ? 'en attente' : 'brouillon';
+
         $doc = Document::create([
             'titre'       => $request->titre,
             'description' => $request->description,
             'fichier'     => $path,
             'due_date'    => $request->due_date,
-            'status'      => 'Brouillon',
+            'status'      => $status,
             'user_id'     => auth()->id(),
         ]);        
 
@@ -93,8 +96,8 @@ class DocumentController extends Controller
 
     public function show(Document $document)
     {
-        // Vérifier que le document appartient bien à l'utilisateur connecté
-        if ($document->user_id !== auth()->id()) {
+        // Vérifier que le document appartient à l'utilisateur connecté ou est dans un parapheur accessible
+        if ($document->user_id !== auth()->id() && !$document->parapheurs()->exists()) {
             abort(403, 'Accès non autorisé.');
         }
 
@@ -104,6 +107,11 @@ class DocumentController extends Controller
 
     public function download(Document $document)
     {
+        // Vérifier que le document appartient à l'utilisateur connecté ou est dans un parapheur accessible
+        if ($document->user_id !== auth()->id() && !$document->parapheurs()->exists()) {
+            abort(403, 'Accès non autorisé.');
+        }
+
         if (!Storage::disk('public')->exists($document->fichier)) {
             return back()->with('error', 'Le fichier n\'existe pas.');
         }
