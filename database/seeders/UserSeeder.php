@@ -34,5 +34,12 @@ class UserSeeder extends Seeder
             'password' => Hash::make('password'),
             'role' => 'etudiant'
         ]);
+
+        User::create([
+            'name' => 'Nouvel Étudiant',
+            'email' => 'nouvel.etudiant@edusign.com',
+            'password' => Hash::make('etudiant123'),
+            'role' => 'etudiant'
+        ]);
     }
 }

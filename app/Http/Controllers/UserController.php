@@ -26,23 +26,25 @@ class UserController extends Controller
             'prenom' => 'required|string|max:255',
             'email' => 'required|email|max:255',
             'telephone' => 'nullable|string',
-            'old_password' => 'nullable|string',
+            'old_password' => 'required_with:new_password|string',
             'new_password' => 'nullable|string|confirmed|min:8',
         ]);
 
-        // Mise à jour des infos
-        $user->update([
-            'last_name' => $validated['nom'],
-            'first_name' => $validated['prenom'],
-            'email' => $validated['email'],
-            'phone' => $validated['telephone'],
-        ]);
+        // Mise à jour des infos de base
+        $user->last_name = $validated['nom'];
+        $user->first_name = $validated['prenom'];
+        $user->email = $validated['email'];
+        $user->phone = $validated['telephone'];
 
-        // Mise à jour mot de passe
+        // Mise à jour du mot de passe si fourni
         if ($request->filled('new_password')) {
+            if (!Hash::check($request->old_password, $user->password)) {
+                return back()->withErrors(['old_password' => 'L\'ancien mot de passe est incorrect.']);
+            }
             $user->password = Hash::make($validated['new_password']);
-            $user->save();
         }
+
+        $user->save();
 
         return redirect()->route('dashboard')->with('success', 'Profil mis à jour avec succès.');
     }

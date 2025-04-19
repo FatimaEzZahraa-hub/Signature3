@@ -74,15 +74,12 @@ class DocumentController extends Controller
 
         $path = $request->file('file')->store('documents', 'public');
 
-        // Déterminer le statut en fonction de la présence de signataires
-        $status = $request->filled('signataires') ? 'en attente' : 'brouillon';
-
         $doc = Document::create([
             'titre'       => $request->titre,
             'description' => $request->description,
             'fichier'     => $path,
             'due_date'    => $request->due_date,
-            'status'      => $status,
+            'status'      => 'Brouillon',
             'user_id'     => auth()->id(),
         ]);        
 
